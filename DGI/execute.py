@@ -7,7 +7,7 @@ from models import DGI, LogReg
 from utils import process
 from sklearn.model_selection import KFold
 
-dataset = 'citeseer'
+dataset = 'pubmed'
 
 # training params
 batch_size = 1

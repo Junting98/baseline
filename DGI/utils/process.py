@@ -128,7 +128,7 @@ def get_dataset(dataset='data/pubmed'):
     if 'cora' in dataset:
         attribute = np.zeros((len(lines), 1433))
     else:
-        attribute = np.zeros((len(lines), 3703))
+        attribute = np.zeros((len(lines), 500))
     idx = 0
     for line in lines:
         line = line.strip().split()
@@ -137,7 +137,7 @@ def get_dataset(dataset='data/pubmed'):
         if 'cora' in dataset:
             labels[idx] = mapping[line[-1]]
         else:
-            labels[idx] = mapping1[line[-1]]
+            labels[idx] = int(line[-1]) - 1
         idx += 1
     return mask, labels, attribute
 
