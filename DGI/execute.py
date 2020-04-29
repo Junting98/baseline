@@ -16,7 +16,7 @@ patience = 20
 lr = 0.001
 l2_coef = 0.0
 drop_prob = 0.0
-hid_units = 512
+hid_units = 256
 sparse = True
 nonlinearity = 'prelu' # special name to separate parameters
 
@@ -105,7 +105,7 @@ for epoch in range(nb_epochs):
 print('Loading {}th epoch'.format(best_t))
 model.load_state_dict(torch.load('best_dgi.pkl'))
 for _ in range(5):
-    idx_train, idx_val, idx_test = process.train_test_split(features.shape[1], 0.2)
+    idx_train, idx_val, idx_test = process.train_test_split(features.shape[1], 0.6)
     embeds, _ = model.embed(features, sp_adj if sparse else adj, sparse, None)
     train_embs = embeds[0, idx_train]
     val_embs = embeds[0, idx_val]

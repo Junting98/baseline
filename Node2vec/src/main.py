@@ -15,10 +15,12 @@ import networkx as nx
 import node2vec
 from sklearn.metrics import f1_score
 from gensim.models import Word2Vec
+from sklearn.model_selection import KFold
 
 mapping = {"Case_Based": 0, "Genetic_Algorithms": 1, "Neural_Networks": 2, "Probabilistic_Methods": 3,
            "Reinforcement_Learning": 4, "Rule_Learning": 5, "Theory": 6}
 mapping1 = {"Agents": 0, "IR": 1, "DB": 2, "AI": 3, "HCI": 4, "ML": 5}
+
 
 def get_mask(nodes):
     count = 0
@@ -29,6 +31,7 @@ def get_mask(nodes):
         reverse_mask[count] = node
         count += 1
     return mask, reverse_mask
+
 
 def preprocess(dataset='data/cora', directed='directed', split=0.8):
     f = open("../../data/" + dataset + '.cites', 'r')
@@ -71,14 +74,14 @@ def get_dataset(dataset):
 
 def parse_args():
     '''
-	Parses the node2vec arguments.
-	'''
+    Parses the node2vec arguments.
+    '''
     parser = argparse.ArgumentParser(description="Run node2vec.")
 
-    parser.add_argument('--input', nargs='?', default='/home/jtwang/baseline/data/pubmed.cites2',
+    parser.add_argument('--input', nargs='?', default='/home/jtwang/baseline/data/cora.cites2',
                         help='Input graph path')
 
-    parser.add_argument('--output', nargs='?', default='/home/jtwang/baseline/node2vec/emb/pubmed.emb',
+    parser.add_argument('--output', nargs='?', default='/home/jtwang/baseline/Node2vec/emb/cora.emb',
                         help='Embeddings path')
 
     parser.add_argument('--dimensions', type=int, default=128,
@@ -119,8 +122,8 @@ def parse_args():
 
 def read_graph():
     '''
-	Reads the input network in networkx.
-	'''
+    Reads the input network in networkx.
+    '''
     if args.weighted:
         G = nx.read_edgelist(args.input, nodetype=int, data=(('weight', float),), create_using=nx.DiGraph())
     else:
@@ -136,8 +139,8 @@ def read_graph():
 
 def learn_embeddings(walks):
     '''
-	Learn embeddings by optimizing the Skipgram objective using SGD.
-	'''
+    Learn embeddings by optimizing the Skipgram objective using SGD.
+    '''
     walks = [map(str, walk) for walk in walks]
     model = Word2Vec(walks, size=args.dimensions, window=args.window_size, min_count=0, sg=1, workers=args.workers,
                      iter=args.iter)
@@ -149,8 +152,8 @@ def learn_embeddings(walks):
 
 def main(args):
     '''
-	Pipeline for representational learning for all nodes in a graph.
-	'''
+    Pipeline for representational learning for all nodes in a graph.
+    '''
     nx_G = read_graph()
     G = node2vec.Graph(nx_G, args.directed, args.p, args.q)
     G.preprocess_transition_probs()
@@ -175,30 +178,35 @@ def train_test_split(n_nodes, testing):
 
 
 def predict(dataset, labels, G):
-	G = G.subgraph(max(nx.connected_component_subgraphs(G.copy().to_undirected()), key=len).nodes())
-	labels = labels[G.nodes()]
-	new_mask, _ = get_mask(G.nodes())
-	embeddings = np.zeros((len(labels), 128))
-	f = open('../emb/{}.emb'.format(dataset), 'r+')
-	lines = f.readlines()
-	for line in lines:
-		line = line.strip().split()
-		if int(line[0]) not in new_mask.keys():
-			continue
-		embeddings[new_mask[int(line[0])]] = np.array(line[1:], dtype=np.float64)
-	train_index, val_index, test_index = train_test_split(len(labels), 0.6)
-	clf = LogisticRegression(penalty='l2', multi_class='ovr',max_iter=200)
-	model = clf.fit(embeddings[train_index], labels[train_index])
-	yhat = model.predict(embeddings[test_index])
-	print((yhat == labels[test_index]))
-	acc = np.sum((yhat == labels[test_index]))/ float(len(test_index))
-	print(acc)
+    G = G.subgraph(max(nx.connected_component_subgraphs(G.copy().to_undirected()), key=len).nodes())
+    labels = labels[G.nodes()]
+    new_mask, _ = get_mask(G.nodes())
+    embeddings = np.zeros((len(labels), 128))
+    f = open('../emb/{}.emb'.format(dataset), 'r+')
+    lines = f.readlines()
+    for line in lines:
+        line = line.strip().split()
+        if int(line[0]) not in new_mask.keys():
+            continue
+        embeddings[new_mask[int(line[0])]] = np.array(line[1:], dtype=np.float64)
+    kf = KFold(n_splits=5)
+    acc = 0
+    for _ in range(5):
+        train_index, val_index, test_index = train_test_split(len(labels), 0.6)
+        clf = LogisticRegression(penalty='l2', multi_class='ovr', max_iter=100)
+        model = clf.fit(embeddings[train_index], labels[train_index])
+        yhat = model.predict(embeddings[test_index])
+        curr_acc = np.sum((yhat == labels[test_index])) / float(len(test_index))
+        acc += curr_acc
+        print(curr_acc)
+    print(acc / 5.0)
+
 
 if __name__ == "__main__":
-    dataset = 'pubmed'
+    dataset = 'cora'
     mask, labels, G, _ = preprocess(dataset)
-    f = open("/home/jtwang/baseline/data/pubmed.cites", 'r+')
-    g = open('/home/jtwang/baseline/data/pubmed.cites2', 'w+')
+    f = open("/home/jtwang/baseline/data/{}.cites".format(dataset), 'r+')
+    g = open('/home/jtwang/baseline/data/{}.cites2'.format(dataset), 'w+')
     for line in f.readlines():
         line = line.strip().split()
         node1 = line[0]
@@ -209,5 +217,5 @@ if __name__ == "__main__":
         idx2 = mask[node2]
         g.write(str(idx1) + '\t' + str(idx2) + '\n')
     args = parse_args()
-    main(args)
+    # main(args)
     predict(dataset, labels, G)

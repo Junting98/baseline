@@ -115,7 +115,7 @@ def load_data(dataset_str):
     # idx_train = indices[:adj.shape[0] // 3]
     # idx_val = indices[adj.shape[0] // 3: (2 * adj.shape[0]) // 3]
     # idx_test = indices[(2 * adj.shape[0]) // 3:]
-    idx_train, idx_val, idx_test = train_test_split(len(indices), 0.6)
+    idx_train, idx_val, idx_test = train_test_split(len(indices), 0.2)
 
     train_mask = sample_mask(idx_train, labels.shape[0])
     val_mask = sample_mask(idx_val, labels.shape[0])

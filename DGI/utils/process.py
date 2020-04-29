@@ -225,7 +225,7 @@ def load_data(dataset_str): # {'pubmed', 'citeseer', 'cora'}
         labels[i, int(temp_label[i])] = 1
 
     adj = nx.adjacency_matrix(G)
-    idx_train, idx_val, idx_test = train_test_split(len(list(G.nodes())), 0.2)
+    idx_train, idx_val, idx_test = train_test_split(len(list(G.nodes())), 0.6)
 
     return adj, csr_matrix(features), labels, idx_train, idx_val, idx_test
 
