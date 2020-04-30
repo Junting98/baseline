@@ -78,10 +78,10 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser(description="Run node2vec.")
 
-    parser.add_argument('--input', nargs='?', default='/home/jtwang/baseline/data/cora.cites2',
+    parser.add_argument('--input', nargs='?', default='/home/jtwang/baseline/data/europe.edgelist',
                         help='Input graph path')
 
-    parser.add_argument('--output', nargs='?', default='/home/jtwang/baseline/Node2vec/emb/cora.emb',
+    parser.add_argument('--output', nargs='?', default='/home/jtwang/baseline/Node2vec/emb/europe.emb',
                         help='Embeddings path')
 
     parser.add_argument('--dimensions', type=int, default=128,
@@ -203,19 +203,33 @@ def predict(dataset, labels, G):
 
 
 if __name__ == "__main__":
-    dataset = 'cora'
-    mask, labels, G, _ = preprocess(dataset)
-    f = open("/home/jtwang/baseline/data/{}.cites".format(dataset), 'r+')
-    g = open('/home/jtwang/baseline/data/{}.cites2'.format(dataset), 'w+')
-    for line in f.readlines():
-        line = line.strip().split()
-        node1 = line[0]
-        node2 = line[1]
-        if node1 is node2:
-            continue
-        idx1 = mask[node1]
-        idx2 = mask[node2]
-        g.write(str(idx1) + '\t' + str(idx2) + '\n')
-    args = parse_args()
+    dataset = 'europe'
+    # mask, labels, G, _ = preprocess(dataset)
+    # f = open("/home/jtwang/baseline/data/{}.cites".format(dataset), 'r+')
+    # g = open('/home/jtwang/baseline/data/{}.cites2'.format(dataset), 'w+')
+    # for line in f.readlines():
+    #     line = line.strip().split()
+    #     node1 = line[0]
+    #     node2 = line[1]
+    #     if node1 is node2:
+    #         continue
+    #     idx1 = mask[node1]
+    #     idx2 = mask[node2]
+    #     g.write(str(idx1) + '\t' + str(idx2) + '\n')
+    # args = parse_args()
     # main(args)
-    predict(dataset, labels, G)
+    dest = open('/home/jtwang/baseline/Node2vec/emb/{}.content'.format(dataset), 'w+')
+    label = open('/home/jtwang/baseline/data/{}.label.txt'.format(dataset), 'r+')
+    emb = open('/home/jtwang/baseline/Node2vec/emb/{}.emb'.format(dataset), 'r+')
+    label_map = {}
+    for line in label.readlines()[1:]:
+        line = line.strip().split()
+        label_map[line[0]] = line[1]
+
+    for line in emb.readlines()[1:]:
+        line = line.strip().split()
+        node = line[0]
+        dest.write(' '.join(line) + ' '+ label_map[node] +'\n')
+
+
+    # predict(dataset, labels, G)

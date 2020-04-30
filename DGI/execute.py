@@ -7,7 +7,7 @@ from models import DGI, LogReg
 from utils import process
 from sklearn.model_selection import KFold
 
-dataset = 'pubmed'
+dataset = 'flickr'
 
 # training params
 batch_size = 1
@@ -26,7 +26,7 @@ features, _ = process.preprocess_features(features)
 
 print(features)
 nb_nodes = features.shape[0]
-ft_size = features.shape[1]
+
 nb_classes = labels.shape[1]
 kf = KFold(n_splits=5,shuffle=False)
 adj = process.normalize_adj(adj + sp.eye(adj.shape[0]))
@@ -36,6 +36,9 @@ if sparse:
 else:
     adj = (adj + sp.eye(adj.shape[0])).todense()
 
+print(features.shape)
+
+ft_size = features.shape[1]
 features = torch.FloatTensor(features[np.newaxis])
 if not sparse:
     adj = torch.FloatTensor(adj[np.newaxis])

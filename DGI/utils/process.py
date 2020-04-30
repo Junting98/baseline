@@ -5,7 +5,9 @@ import scipy.sparse as sp
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg.eigen.arpack import eigsh
 import sys
+import os
 import torch
+import scipy.io as sio
 import torch.nn as nn
 mapping = {"Case_Based": 0, "Genetic_Algorithms": 1, "Neural_Networks": 2, "Probabilistic_Methods": 3,
            "Reinforcement_Learning": 4, "Rule_Learning": 5, "Theory": 6}
@@ -177,6 +179,23 @@ def load_social_data(dataset):
     return label.flatten() - 1, features, G
 
 
+def load_social_data(dataset):
+    mat_contents = sio.loadmat('../data/'+dataset + ".mat")
+    adj = mat_contents["Network"].toarray()
+    if not os.path.exists('../data/' + dataset + '.cites'):
+        f = open("../data/" + dataset + '.cites', "w+")
+        for i in range(adj.shape[0]):
+            for j in range(adj.shape[1]):
+                if adj[i][j] != 0:
+                    f.write(str(i) + '\t' + str(j) + '\n')
+        f.close()
+    adj = np.array(adj, dtype=int)
+    features = mat_contents["Attributes"]
+    label = mat_contents["Label"]
+    G = nx.convert_matrix.from_numpy_matrix(adj, parallel_edges=False, create_using=nx.Graph)
+    return label.flatten() - 1, features, G
+
+
 def load_data(dataset_str): # {'pubmed', 'citeseer', 'cora'}
     # """Load data."""
     # names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
@@ -214,7 +233,9 @@ def load_data(dataset_str): # {'pubmed', 'citeseer', 'cora'}
     # idx_train = range(len(y))
     # idx_val = range(len(y), len(y)+500)
 
-    mask, temp_label, features, G = preprocess(dataset_str)
+    # mask, temp_label, features, G = preprocess(dataset_str)
+    temp_label, features, G = load_social_data(dataset_str)
+    features = np.identity(len(temp_label))
     G = G.subgraph(max(nx.connected_component_subgraphs(G.copy().to_undirected()), key=len).nodes())
     G = G.to_undirected()
     temp_label = temp_label[G.nodes()]
